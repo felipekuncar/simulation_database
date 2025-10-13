@@ -63,10 +63,10 @@
     script = apptainer exec -c "$CONTAINER" bb-sim /event/realisation.json /event/stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
 
 [[generate_velocity_model<event>]]
-    script = apptainer exec -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --velocity-model-bin-path /Velocity-Model/NZVM
+    script = apptainer exec -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm --num-threads 128
 
     [[[directives]]]
-         -l select=1:ncpus=64
+         -l select=1:ncpus=64:mem=128gb
          -l walltime=03:00:00
 
 [[hf_sim<event>]]

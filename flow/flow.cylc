@@ -1,0 +1,103 @@
+#!Jinja2
+{% from "load_data" import load_json %}
+
+[meta]
+      title = NZ Validation Workflow
+      description = """NZ Validation Workflow
+
+      This workflow can be executed on any HPC cluster or local machine with cylc installed. To do this:
+
+      1. Clone the repository or download the output archive to your machine in `~/cylc-src/simulation_database'.
+      2. Install cylc: https://cylc.github.io/cylc-doc/stable/html/installation.html
+      3. Update the platform and paths indicated below to change the location of the data files.
+         - To define a platform for your cluster use: https://cylc.github.io/cylc-doc/stable/html/reference/config/writing-platform-configs.html.
+         - To run on your own computer, set the platform to "localhost". No other configuration is required.
+      4. Start the workflow: `cylc vip simulation_database`.
+      5. Interact with the running workflow with `cylc tui`.
+      6. Results will appear in `~/cylc-run/simulation_database/runN/share/<event>`, one for each event in `events.json`.
+
+      Dependencies
+      ------------
+      - Cylc (https://cylc.github.io)
+      - Apptainer (https://apptainer.org/)
+      """
+
+{% set events = load_json('events.json') %}
+
+[task parameters]
+      event = {{ events | join(', ') }}
+
+[scheduling]
+    [[graph]]
+        R1 = """
+        generate_velocity_model => create_e3d_par<event> => emod3d<event> => lf_to_xarray<event> => bb_sim<event> => im_calc<event>
+        generate_station_coordinates => create_e3d_par<event>
+        generate_station_coordinates => hf_sim<event> => bb_sim<event>
+        realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
+        realisation_to_srf<event> => create_e3d_par<event>
+        """
+[runtime]
+[[root]]
+
+    platform = cascade
+
+    [[[environment]]]
+        EVENT = %(event)s
+        EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/R%(event)s
+        KO_MATRIX_PATH = /uoc/project/uoc40001/ko_matrices
+        APPTAINER_BINDPATH = "$PWD:/out,${EVENT_SHARE}:/event,${KO_MATRIX_PATH}:/ko_matrices"
+        CONTAINER = /uoc/project/uoc40001/scratch/jfa92/simulation_database/runner.sif
+        EMOD3D = /uoc/project/uoc40001/EMOD3D/tools/emod3d-mpi_v3.0.13
+        DEFAULTS = 24.2.2.1
+
+[[create_e3d_par<event>]]
+    platform = localhost
+    script = apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
+    [[[environment]]]
+         APPTAINER_BINDPATH = $EVENT_SHARE
+
+[[bb_sim<event>]]
+    script = apptainer exec -c "$CONTAINER" bb-sim /event/realisation.json /event/stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
+
+[[generate_velocity_model]]
+    script = apptainer exec -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --velocity-model-bin-path /Velocity-Model/NZVM
+
+    [[[directives]]]
+         -l select=1:ncpus=64
+         -l walltime=03:00:00
+
+[[hf_sim<event>]]
+    script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/realisation.hf
+
+    [[[directives]]]
+         -l select=1:ncpus=32
+         -l walltime=06:00:00
+
+
+[[im_calc<event>]]
+    script = apptainer exec -c "$CONTAINER" im-calc /event/realisation.json /event/realisation.bb /event/intensity_measures.h5 --num-processes 64 --psa-rotd-maximum-memory-allocation 40 --ko-directory /ko_matrices
+
+    [[[directives]]]
+         -l select=1:ncpus=64:mem=100gb
+         -l walltime=01:00:00
+
+[[realisation_to_srf<event>]]
+    script = apptainer exec -c "$CONTAINER" realisation-to-srf /event/realisation.json /event/realisation.srf --genslip-path /EMOD3D/tools/genslip_v5.6.2
+
+[[generate_stoch<event>]]
+    script = apptainer exec -c "$CONTAINER" generate-stoch /event/realisation.json /event/realisation.srf /event/realisation.stoch
+
+[[generate_station_coordinates]]
+    platform = localhost
+    script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /event/stations/stations_input.ll /event/stations/
+
+[[emod3d<event>]]
+    pre-script = "spack load openmpi"
+    script = mpirun -np 640 -hostfile $PBS_NODEFILE $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par
+
+    [[[directives]]]
+         -l select=10:ncpus=64:mpiprocs=64:mem=1280gb
+         -l walltime=06:00:00
+
+[[lf_to_xarray<event>]]
+    script = apptainer exec -c "$CONTAINER" lf-to-xarray /event/LF/OutBin /event/realisation.lf

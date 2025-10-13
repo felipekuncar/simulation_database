@@ -74,7 +74,7 @@
     script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
 
     [[[directives]]]
-         -l select=1:ncpus=32
+         -l select=1:ncpus=32:mem=64gb
          -l walltime=06:00:00
 
 

@@ -44,7 +44,7 @@
     pre-script = "spack load apptainer"
     [[[environment]]]
         EVENT = %(event)s
-        NZCVM_PATH = "/uoc/project/uoc40001/nzcvm"
+        NZCVM_PATH = "/uoc/project/uoc40001/nzcvm_data"
         EVENTS_DIR = "$CYLC_WORKFLOW_RUN_DIR/events"
         EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/%(event)s
         KO_MATRIX_PATH = /uoc/project/uoc40001/ko_matrices

@@ -30,9 +30,10 @@
 [scheduling]
     [[graph]]
         R1 = """
+        create_simulation_directories => generate_velocity_model & generate_station_coordinates & realisation_to_srf<event>
         generate_velocity_model => create_e3d_par<event> => emod3d<event> => lf_to_xarray<event> => bb_sim<event> => im_calc<event>
-        generate_station_coordinates => create_e3d_par<event>
-        generate_station_coordinates => hf_sim<event> => bb_sim<event>
+        generate_station_coordinates<event> => create_e3d_par<event>
+        generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
         realisation_to_srf<event> => create_e3d_par<event>
         """
@@ -43,10 +44,12 @@
     pre-script = "spack load apptainer"
     [[[environment]]]
         EVENT = %(event)s
-        EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/R%(event)s
+        EVENTS_JSON = "$CYLC_WORKFLOW_RUN_DIR/events.json"
+        EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/%(event)s
         KO_MATRIX_PATH = /uoc/project/uoc40001/ko_matrices
+        STATIONS_PATH = "$CYLC_WORKFLOW_RUN_DIR/stations"
         APPTAINER_BINDPATH = "$PWD:/out,${EVENT_SHARE}:/event,${KO_MATRIX_PATH}:/ko_matrices"
-        CONTAINER = /uoc/project/uoc40001/scratch/jfa92/simulation_database/runner.sif
+        CONTAINER = $CYLC_WORKFLOW_RUN_DIR/runner.sif
         EMOD3D = /uoc/project/uoc40001/EMOD3D/tools/emod3d-mpi_v3.0.13
         DEFAULTS = 24.2.2.1
 
@@ -87,9 +90,9 @@
 [[generate_stoch<event>]]
     script = apptainer exec -c "$CONTAINER" generate-stoch /event/realisation.json /event/realisation.srf /event/realisation.stoch
 
-[[generate_station_coordinates]]
+[[generate_station_coordinates<event>]]
     platform = localhost
-    script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /event/stations/stations_input.ll /event/stations/
+    script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /stations/stations_input.ll /event/stations/
 
 [[emod3d<event>]]
     pre-script = "spack load openmpi"
@@ -101,3 +104,8 @@
 
 [[lf_to_xarray<event>]]
     script = apptainer exec -c "$CONTAINER" lf-to-xarray /event/LF/OutBin /event/realisation.lf
+
+[[create_simulation_directories]]
+    platform = localhost
+    pre-script = ""
+    script = jq -r '.[]' "$EVENTS_JSON" | xargs -I \{\} mkdir $CYLC_WORKFLOW_SHARE_DIR/\{\}

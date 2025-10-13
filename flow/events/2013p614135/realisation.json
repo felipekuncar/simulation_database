@@ -1,0 +1,123 @@
+{
+    "metadata": {
+        "name": "2013p614135",
+        "version": "1",
+        "defaults_version": "24.2.2.1",
+        "tag": "gcmt"
+    },
+    "sources": {
+        "source_geometries": {
+            "2013p614135": {
+                "type": "fault",
+                "corners": [
+                    {
+                        "latitude": -41.6511483353761,
+                        "longitude": 174.3296520299399,
+                        "depth": 14657.914457658564
+                    },
+                    {
+                        "latitude": -41.7006717377497,
+                        "longitude": 174.20497035218875,
+                        "depth": 14657.914457658564
+                    },
+                    {
+                        "latitude": -41.68641262324435,
+                        "longitude": 174.1949103361429,
+                        "depth": 21342.085542341436
+                    },
+                    {
+                        "latitude": -41.63690030134501,
+                        "longitude": 174.3195727659303,
+                        "depth": 21342.085542341436
+                    }
+                ]
+            }
+        }
+    },
+    "rupture_propagation": {
+        "rupture_causality_tree": {
+            "2013p614135": null
+        },
+        "jump_points": {},
+        "hypocentre": {
+            "s": 0.5,
+            "d": 0.5
+        }
+    },
+    "magnitudes": {
+        "magnitudes": {
+            "2013p614135": 5.9
+        }
+    },
+    "rakes": {
+        "rakes": {
+            "2013p614135": 162.0
+        }
+    },
+    "log_trail": {
+        "log": [
+            {
+                "utility": "gen_realisations_SRFs_MP.py",
+                "version": "0.1.dev920+g0eccce141",
+                "timestamp": "2025-09-30T13:01:19.739705",
+                "args": []
+            },
+            {
+                "utility": "gen_realisations_SRFs_MP.py",
+                "version": "0.1.dev920+g0eccce141",
+                "timestamp": "2025-09-30T13:01:22.276780",
+                "args": []
+            },
+            {
+                "utility": "gen_realisations_SRFs_MP.py",
+                "version": "0.1.dev920+g0eccce141",
+                "timestamp": "2025-10-13T14:10:06.109042",
+                "args": []
+            }
+        ]
+    },
+    "velocity_model": {
+        "min_vs": 0.5,
+        "version": "2.09",
+        "topo_type": "SQUASHED_TAPERED",
+        "dt": 0.005,
+        "ds_multiplier": 1.2,
+        "resolution": 0.1,
+        "vs30": 500.0,
+        "s_wave_velocity": 3500.0,
+        "pgv_interpolants": [
+            [
+                3.5,
+                0.10000000149011612
+            ],
+            [
+                8.0,
+                0.10000000149011612
+            ]
+        ]
+    },
+    "domain": {
+        "resolution": 0.1,
+        "domain": [
+            {
+                "latitude": -43.27593851189619,
+                "longitude": 169.00960854022486
+            },
+            {
+                "latitude": -45.043802704634984,
+                "longitude": 171.8623133105813
+            },
+            {
+                "latitude": -39.145610995680755,
+                "longitude": 177.9808515755071
+            },
+            {
+                "latitude": -37.52572060446961,
+                "longitude": 175.2216568134758
+            }
+        ],
+        "depth": 45.0,
+        "duration": 197.4509028292547,
+        "dt": 0.005
+    }
+}

@@ -44,7 +44,7 @@
     pre-script = "spack load apptainer"
     [[[environment]]]
         EVENT = %(event)s
-        EVENTS_JSON = "$CYLC_WORKFLOW_RUN_DIR/events.json"
+        EVENTS_DIR = "$CYLC_WORKFLOW_RUN_DIR/events"
         EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/%(event)s
         KO_MATRIX_PATH = /uoc/project/uoc40001/ko_matrices
         STATIONS_PATH = "$CYLC_WORKFLOW_RUN_DIR/stations"
@@ -108,4 +108,4 @@
 [[create_simulation_directories]]
     platform = localhost
     pre-script = ""
-    script = jq -r '.[]' "$EVENTS_JSON" | xargs -I \{\} mkdir $CYLC_WORKFLOW_SHARE_DIR/\{\}
+    script = cp -r $EVENTS_DIR $CYLC_WORKFLOW_SHARE_DIR

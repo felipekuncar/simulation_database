@@ -30,7 +30,7 @@
 [scheduling]
     [[graph]]
         R1 = """
-        create_simulation_directories => generate_velocity_model & generate_station_coordinates & realisation_to_srf<event>
+        create_simulation_directories => generate_velocity_model & generate_station_coordinates<event> & realisation_to_srf<event>
         generate_velocity_model => create_e3d_par<event> => emod3d<event> => lf_to_xarray<event> => bb_sim<event> => im_calc<event>
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>

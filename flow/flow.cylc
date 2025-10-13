@@ -70,7 +70,7 @@
          -l walltime=03:00:00
 
 [[hf_sim<event>]]
-    script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/realisation.hf
+    script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
 
     [[[directives]]]
          -l select=1:ncpus=32

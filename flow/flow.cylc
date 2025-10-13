@@ -40,7 +40,7 @@
 [[root]]
 
     platform = cascade
-
+    pre-script = "spack load apptainer"
     [[[environment]]]
         EVENT = %(event)s
         EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/R%(event)s

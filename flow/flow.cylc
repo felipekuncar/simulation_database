@@ -48,7 +48,7 @@
         EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/%(event)s
         KO_MATRIX_PATH = /uoc/project/uoc40001/ko_matrices
         STATIONS_PATH = "$CYLC_WORKFLOW_RUN_DIR/stations"
-        APPTAINER_BINDPATH = "$PWD:/out,${EVENT_SHARE}:/event,${KO_MATRIX_PATH}:/ko_matrices"
+        APPTAINER_BINDPATH = "$PWD:/out,${EVENT_SHARE}:/event,${KO_MATRIX_PATH}:/ko_matrices,${STATIONS_PATH}:/stations"
         CONTAINER = $CYLC_WORKFLOW_RUN_DIR/runner.sif
         EMOD3D = /uoc/project/uoc40001/EMOD3D/tools/emod3d-mpi_v3.0.13
         DEFAULTS = 24.2.2.1

@@ -97,10 +97,10 @@
 
 [[emod3d<event>]]
     pre-script = "spack load openmpi"
-    script = mpirun -np 640 -hostfile $PBS_NODEFILE $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par
+    script = "mpirun -np 768 -hostfile $PBS_NODEFILE $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
 
     [[[directives]]]
-         -l select=10:ncpus=64:mpiprocs=64:mem=1280gb
+         -l select=2:ncpus=384:mpiprocs=384:mem=384GB
          -l walltime=06:00:00
 
 [[lf_to_xarray<event>]]

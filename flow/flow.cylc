@@ -68,7 +68,7 @@
 
     [[[directives]]]
          -l select=1:ncpus=64:mem=128gb
-         -l walltime=03:00:00
+         -l walltime=06:00:00
 
 [[hf_sim<event>]]
     script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
@@ -96,12 +96,12 @@
     script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /stations/stations_input.ll /event/stations/
 
 [[emod3d<event>]]
-    pre-script = "spack load openmpi"
-    script = "mpirun -np 768 -hostfile $PBS_NODEFILE $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
+    pre-script = "spack load intel-oneapi-mpi"
+    script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
 
     [[[directives]]]
-         -l select=2:ncpus=384:mpiprocs=384:mem=384GB
-         -l walltime=06:00:00
+         -l select=4:ncpus=384:mpiprocs=384:mem=384GB
+         -l walltime=24:00:00
 
 [[lf_to_xarray<event>]]
     script = apptainer exec -c "$CONTAINER" lf-to-xarray /event/LF/OutBin /event/realisation.lf

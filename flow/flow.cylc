@@ -61,7 +61,7 @@
          APPTAINER_BINDPATH = $EVENT_SHARE
 
 [[bb_sim<event>]]
-    script = apptainer exec -c "$CONTAINER" bb-sim /event/realisation.json /event/stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
+    script = apptainer exec -c "$CONTAINER" bb-sim /event/realisation.json /stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
 
 [[generate_velocity_model<event>]]
     script = apptainer exec --env "NZCVM_DATA_ROOT=/nzcvm" -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm --num-threads 128
@@ -96,12 +96,13 @@
     script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /stations/stations_input.ll /event/stations/
 
 [[emod3d<event>]]
-    pre-script = "spack load openmpi"
-    script = "mpirun -np 768 -hostfile $PBS_NODEFILE $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
+    pre-script = "spack load intel-oneapi-mpi"
+    script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
 
     [[[directives]]]
-         -l select=2:ncpus=384:mpiprocs=384:mem=384GB
+         -l select=2:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=06:00:00
+
 
 [[lf_to_xarray<event>]]
     script = apptainer exec -c "$CONTAINER" lf-to-xarray /event/LF/OutBin /event/realisation.lf

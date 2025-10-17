@@ -1,123 +1,123 @@
 {
-    "metadata": {
-        "name": "2013p617227",
-        "version": "1",
-        "defaults_version": "24.2.2.1",
-        "tag": "gcmt"
-    },
-    "sources": {
-        "source_geometries": {
-            "2013p617227": {
-                "type": "fault",
-                "corners": [
-                    {
-                        "latitude": -41.75830924605055,
-                        "longitude": 174.07109578621186,
-                        "depth": 11230.88638505959
-                    },
-                    {
-                        "latitude": -41.7866993492813,
-                        "longitude": 174.03303193276363,
-                        "depth": 11230.88638505959
-                    },
-                    {
-                        "latitude": -41.78148641684227,
-                        "longitude": 174.02609606590818,
-                        "depth": 14769.11361494041
-                    },
-                    {
-                        "latitude": -41.75309858672743,
-                        "longitude": 174.06415999052984,
-                        "depth": 14769.11361494041
-                    }
-                ]
-            }
-        }
-    },
-    "rupture_propagation": {
-        "rupture_causality_tree": {
-            "2013p617227": null
-        },
-        "jump_points": {},
-        "hypocentre": {
-            "s": 0.5,
-            "d": 0.5
-        }
-    },
-    "magnitudes": {
-        "magnitudes": {
-            "2013p617227": 5.2
-        }
-    },
-    "rakes": {
-        "rakes": {
-            "2013p617227": -178.0
-        }
-    },
-    "log_trail": {
-        "log": [
-            {
-                "utility": "gen_realisations_SRFs_MP.py",
-                "version": "0.1.dev920+g0eccce141",
-                "timestamp": "2025-09-30T13:02:06.427722",
-                "args": []
-            },
-            {
-                "utility": "gen_realisations_SRFs_MP.py",
-                "version": "0.1.dev920+g0eccce141",
-                "timestamp": "2025-09-30T13:02:08.818448",
-                "args": []
-            },
-            {
-                "utility": "gen_realisations_SRFs_MP.py",
-                "version": "0.1.dev920+g0eccce141",
-                "timestamp": "2025-10-13T14:10:21.386501",
-                "args": []
-            }
+  "metadata": {
+    "name": "2013p617227",
+    "version": "1",
+    "defaults_version": "24.2.2.1",
+    "tag": "gcmt"
+  },
+  "sources": {
+    "source_geometries": {
+      "2013p617227": {
+        "type": "fault",
+        "corners": [
+          {
+            "latitude": -41.75830924605055,
+            "longitude": 174.07109578621186,
+            "depth": 11230.88638505959
+          },
+          {
+            "latitude": -41.7866993492813,
+            "longitude": 174.03303193276363,
+            "depth": 11230.88638505959
+          },
+          {
+            "latitude": -41.78148641684227,
+            "longitude": 174.02609606590818,
+            "depth": 14769.11361494041
+          },
+          {
+            "latitude": -41.75309858672743,
+            "longitude": 174.06415999052984,
+            "depth": 14769.11361494041
+          }
         ]
-    },
-    "velocity_model": {
-        "min_vs": 0.5,
-        "version": "2.09",
-        "topo_type": "SQUASHED_TAPERED",
-        "dt": 0.005,
-        "ds_multiplier": 1.2,
-        "resolution": 0.1,
-        "vs30": 500.0,
-        "s_wave_velocity": 3500.0,
-        "pgv_interpolants": [
-            [
-                3.5,
-                0.10000000149011612
-            ],
-            [
-                8.0,
-                0.10000000149011612
-            ]
-        ]
-    },
-    "domain": {
-        "resolution": 0.1,
-        "domain": [
-            {
-                "latitude": -43.14617030647225,
-                "longitude": 172.91911184365136
-            },
-            {
-                "latitude": -41.203001015292024,
-                "longitude": 176.05283733679798
-            },
-            {
-                "latitude": -39.644498909106076,
-                "longitude": 174.32674833228896
-            },
-            {
-                "latitude": -41.5414932718637,
-                "longitude": 171.2170877599842
-            }
-        ],
-        "depth": 36.0,
-        "duration": 105.59058495431941,
-        "dt": 0.005
+      }
     }
+  },
+  "rupture_propagation": {
+    "rupture_causality_tree": {
+      "2013p617227": null
+    },
+    "jump_points": {},
+    "hypocentre": {
+      "s": 0.5,
+      "d": 0.5
+    }
+  },
+  "magnitudes": {
+    "magnitudes": {
+      "2013p617227": 5.2
+    }
+  },
+  "rakes": {
+    "rakes": {
+      "2013p617227": -178
+    }
+  },
+  "log_trail": {
+    "log": [
+      {
+        "utility": "gen_realisations_SRFs_MP.py",
+        "version": "0.1.dev920+g0eccce141",
+        "timestamp": "2025-09-30T13:02:06.427722",
+        "args": []
+      },
+      {
+        "utility": "gen_realisations_SRFs_MP.py",
+        "version": "0.1.dev920+g0eccce141",
+        "timestamp": "2025-09-30T13:02:08.818448",
+        "args": []
+      },
+      {
+        "utility": "gen_realisations_SRFs_MP.py",
+        "version": "0.1.dev920+g0eccce141",
+        "timestamp": "2025-10-13T14:10:21.386501",
+        "args": []
+      }
+    ]
+  },
+  "velocity_model": {
+    "min_vs": 0.5,
+    "version": "2.09",
+    "topo_type": "SQUASHED_TAPERED",
+    "dt": 0.005,
+    "ds_multiplier": 1.2,
+    "resolution": 0.1,
+    "vs30": 500,
+    "s_wave_velocity": 3500,
+    "pgv_interpolants": [
+      [
+        3.5,
+        0.10000000149011612
+      ],
+      [
+        8,
+        0.10000000149011612
+      ]
+    ]
+  },
+  "domain": {
+    "resolution": 0.1,
+    "domain": [
+      {
+        "latitude": -43.14617030647225,
+        "longitude": 172.91911184365136
+      },
+      {
+        "latitude": -41.203001015292024,
+        "longitude": 176.05283733679798
+      },
+      {
+        "latitude": -39.644498909106076,
+        "longitude": 174.32674833228896
+      },
+      {
+        "latitude": -41.5414932718637,
+        "longitude": 171.2170877599842
+      }
+    ],
+    "depth": 36,
+    "duration": 105.59058495431941,
+    "dt": 0.005
+  }
 }

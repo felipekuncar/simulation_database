@@ -68,7 +68,7 @@
 
     [[[directives]]]
          -l select=1:ncpus=64:mem=128gb
-         -l walltime=03:00:00
+         -l walltime=06:00:00
 
 [[hf_sim<event>]]
     script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
@@ -101,7 +101,7 @@
 
     [[[directives]]]
          -l select=2:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=06:00:00
+         -l walltime=12:00:00
 
 
 [[lf_to_xarray<event>]]

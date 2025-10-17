@@ -1,0 +1,105 @@
+{
+    "metadata": {
+        "name": "2019p665658",
+        "version": "1",
+        "defaults_version": "24.2.2.1",
+        "tag": "gcmt"
+    },
+    "sources": {
+        "source_geometries": {
+            "2019p665658": {
+                "type": "point",
+                "coordinates": {
+                    "latitude": -38.851299999999995,
+                    "longitude": 175.906,
+                    "depth": 9000.0
+                },
+                "length": 3548.1338923357534,
+                "width": 3548.1338923357534,
+                "strike": 64.0,
+                "dip": 51.0,
+                "dip_dir": 154.0
+            }
+        }
+    },
+    "rupture_propagation": {
+        "rupture_causality_tree": {
+            "2019p665658": null
+        },
+        "jump_points": {},
+        "hypocentre": {
+            "s": 0.5,
+            "d": 0.5
+        }
+    },
+    "magnitudes": {
+        "magnitudes": {
+            "2019p665658": 5.1
+        }
+    },
+    "rakes": {
+        "rakes": {
+            "2019p665658": -67.0
+        }
+    },
+    "log_trail": {
+        "log": [
+            {
+                "utility": "gen_realisations_SRFs_MP.py",
+                "version": "0.1.dev920+g0eccce141",
+                "timestamp": "2025-10-17T16:32:10.411213",
+                "args": []
+            },
+            {
+                "utility": "gen_realisations_SRFs_MP.py",
+                "version": "0.1.dev920+g0eccce141",
+                "timestamp": "2025-10-17T16:33:11.751186",
+                "args": []
+            }
+        ]
+    },
+    "velocity_model": {
+        "min_vs": 0.5,
+        "version": "2.07",
+        "topo_type": "SQUASHED_TAPERED",
+        "dt": 0.005,
+        "ds_multiplier": 1.2,
+        "resolution": 0.1,
+        "vs30": 500.0,
+        "s_wave_velocity": 3500.0,
+        "pgv_interpolants": [
+            [
+                3.5,
+                0.10000000149011612
+            ],
+            [
+                8.0,
+                0.10000000149011612
+            ]
+        ]
+    },
+    "domain": {
+        "resolution": 0.1,
+        "domain": [
+            {
+                "latitude": -39.71919296749196,
+                "longitude": 174.09629010624198
+            },
+            {
+                "latitude": -40.329540773460955,
+                "longitude": 177.0216009440834
+            },
+            {
+                "latitude": -37.98244206837479,
+                "longitude": 177.77621277864782
+            },
+            {
+                "latitude": -37.388210470148984,
+                "longitude": 174.94119878580744
+            }
+        ],
+        "depth": 33.0,
+        "duration": 87.56077998933395,
+        "dt": 0.005
+    }
+}

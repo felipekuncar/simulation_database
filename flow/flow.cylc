@@ -88,7 +88,7 @@
 
 
 [[im_calc<event>]]
-    script = apptainer exec -c "$CONTAINER" im-calc /event/realisation.json /event/realisation.bb /event/intensity_measures.h5 --num-processes 64 --psa-rotd-maximum-memory-allocation 40 --ko-directory /ko_matrices
+    script = apptainer exec -c "$CONTAINER" im-calc /event/realisation.json /event/realisation.bb /event/intensity_measures.h5 --psa-rotd-maximum-memory-allocation 40 --ko-directory /ko_matrices
 
     [[[directives]]]
          -l select=1:ncpus=64:mem=100gb

@@ -31,4 +31,4 @@ BEGIN {
 }
 EOF
 )
-echo cylc message "${SIZE}"
+cylc message "${SIZE}"

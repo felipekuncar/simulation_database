@@ -29,6 +29,7 @@
 
 [scheduling]
     [[graph]]
+    # NOTE: suceeded and fail for emod3d must both be optional if both execution paths are used
         R1 = """
         create_simulation_directories => generate_velocity_model<event> & generate_station_coordinates<event> & realisation_to_srf<event>
         generate_velocity_model<event> => create_e3d_par<event> => estimate<event>
@@ -36,7 +37,7 @@
         estimate<event>:medium? => emod3d_medium<event>
         estimate<event>:large? => emod3d_large<event>
         emod3d_small<event>:fail? | emod3d_medium<event>:fail? | emod3d_large<event>:fail? => notify_fail<event>
-        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => notify<event> & cleanup_emod3d<event>
+        emod3d_small<event>:succeeded? | emod3d_medium<event>:succeeded? | emod3d_large<event>:succeeded? => lf_to_xarray<event> => notify<event> & cleanup_emod3d<event>
         lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>

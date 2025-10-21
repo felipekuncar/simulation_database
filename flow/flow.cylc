@@ -35,8 +35,9 @@
         estimate<event>:small? => emod3d_small<event>
         estimate<event>:medium? => emod3d_medium<event>
         estimate<event>:large? => emod3d_large<event>
-        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event>
-        lf_to_xarray<event> => bb_sim<event> => im_calc<event>
+        emod3d_small<event>:fail? | emod3d_medium<event>:fail? | emod3d_large<event>:fail? => notify_fail<event>
+        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => notify<event>
+        lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
@@ -113,6 +114,7 @@
         medium = 'medium'
         large = 'large'
 
+
 [[emod3d_small<event>]]
     pre-script = "spack load intel-oneapi-mpi"
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
@@ -149,3 +151,23 @@
     platform = localhost
     pre-script = ""
     script = cp -r $EVENTS_DIR/. $CYLC_WORKFLOW_SHARE_DIR
+
+[[upload_results]]
+    script = """
+    rclone copy --progress "${CYLC_WORKFLOW_SHARE_DIR}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Scale Test" --include "realisation.*" --include intensity_measures.h5 --include velocity_model.h5
+    """
+    [[[directives]]]
+         -l select=1:ncpus=8:mem=8gb
+         -l walltime=06:00:00
+
+[[notify<event>]]
+    platform = localhost
+    script = """
+    curl -d "LF Simulation Completed for ${EVENT}" ntfy.sh/emod3d_simulation_database
+    """
+
+[[notify_fail<event>]]
+    platform = localhost
+    script = """
+    curl -d "LF Simulation Failed for ${EVENT}" ntfy.sh/emod3d_simulation_database
+    """

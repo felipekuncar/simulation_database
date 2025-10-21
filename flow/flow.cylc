@@ -72,7 +72,7 @@
          -l walltime=01:00:00
 
 [[generate_velocity_model<event>]]
-    script = apptainer exec --env "NZCVM_DATA_ROOT=/nzcvm" -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm
+    script = apptainer exec --env "NZCVM_DATA_ROOT=/nzcvm" -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm --num-threads 64
 
     [[[directives]]]
          -l select=1:ncpus=64:mem=128gb

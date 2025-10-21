@@ -36,7 +36,7 @@
         estimate<event>:medium? => emod3d_medium<event>
         estimate<event>:large? => emod3d_large<event>
         emod3d_small<event>:fail? | emod3d_medium<event>:fail? | emod3d_large<event>:fail? => notify_fail<event>
-        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => notify<event>
+        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => notify<event> & cleanup_emod3d<event>
         lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
@@ -165,6 +165,10 @@
     script = """
     curl -d "LF Simulation Completed for ${EVENT}" ntfy.sh/emod3d_simulation_database
     """
+
+[[cleanup_emod3d<event>]]
+    platform = localhost
+    script = rm -r $EVENT_SHARE/LF/Restart
 
 [[notify_fail<event>]]
     platform = localhost

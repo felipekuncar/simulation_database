@@ -33,11 +33,11 @@
         R1 = """
         create_simulation_directories => generate_velocity_model<event> & generate_station_coordinates<event> & realisation_to_srf<event>
         generate_velocity_model<event> => create_e3d_par<event> => estimate<event>
-        estimate<event>:small? => emod3d_small<event>
-        estimate<event>:medium? => emod3d_medium<event>
-        estimate<event>:large? => emod3d_large<event>
+        estimate<event>:small? => notify_start<event> & emod3d_small<event>
+        estimate<event>:medium? => notify_start<event> & emod3d_medium<event>
+        estimate<event>:large? => notify_start<event> & emod3d_large<event>
         emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => notify<event> & cleanup_emod3d<event>
-        lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results
+        lf_to_xarray<event> => bb_sim<event> => im_calc<event> => notify_complete<event> => upload_results
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
@@ -153,12 +153,10 @@
     script = cp -r $EVENTS_DIR/. $CYLC_WORKFLOW_SHARE_DIR
 
 [[upload_results]]
+    platform = localhost
     script = """
     rclone copy --progress "${CYLC_WORKFLOW_SHARE_DIR}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Scale Test" --include "realisation.*" --include intensity_measures.h5 --include velocity_model.h5
     """
-    [[[directives]]]
-         -l select=1:ncpus=8:mem=8gb
-         -l walltime=06:00:00
 
 [[notify<event>]]
     platform = localhost
@@ -174,4 +172,16 @@
     platform = localhost
     script = """
     curl -d "LF Simulation Failed for ${EVENT}" ntfy.sh/emod3d_simulation_database
+    """
+
+[[notify_start<event>]]
+    platform = localhost
+    script = """
+    curl -d "LF Simulation Started for ${EVENT}" ntfy.sh/emod3d_simulation_database
+    """
+
+[[notify_complete<event>]]
+    platform = localhost
+    script = """
+    curl -d "Simulation completed for ${EVENT}" ntfy.sh/emod3d_simulation_database
     """

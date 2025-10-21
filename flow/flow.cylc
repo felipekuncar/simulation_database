@@ -36,8 +36,7 @@
         estimate<event>:small? => emod3d_small<event>
         estimate<event>:medium? => emod3d_medium<event>
         estimate<event>:large? => emod3d_large<event>
-        emod3d_small<event>:fail? | emod3d_medium<event>:fail? | emod3d_large<event>:fail? => notify_fail<event>
-        emod3d_small<event>:succeeded? | emod3d_medium<event>:succeeded? | emod3d_large<event>:succeeded? => lf_to_xarray<event> => notify<event> & cleanup_emod3d<event>
+        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => notify<event> & cleanup_emod3d<event>
         lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>

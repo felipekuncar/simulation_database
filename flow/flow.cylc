@@ -33,17 +33,20 @@
         R1 = """
         create_simulation_directories => generate_velocity_model<event> & generate_station_coordinates<event> & realisation_to_srf<event>
         generate_velocity_model<event> => create_e3d_par<event> => estimate<event>
-        estimate<event>:small? => notify_start<event> & emod3d_small<event>
-        estimate<event>:medium? => notify_start<event> & emod3d_medium<event>
-        estimate<event>:large? => notify_start<event> & emod3d_large<event>
-        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => notify<event> & cleanup_emod3d<event>
-        lf_to_xarray<event> => bb_sim<event> => im_calc<event> => notify_complete<event> => upload_results
+        estimate<event>:small? => emod3d_small<event>
+        estimate<event>:medium? => emod3d_medium<event>
+        estimate<event>:large? => emod3d_large<event>
+        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => cleanup_emod3d<event>
+        lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results<event>
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
         realisation_to_srf<event> => create_e3d_par<event>
         """
     [[queues]]
+        [[[rclone]]]
+                limit = 1
+                members = RCLONE
         [[[large_job]]]
                 limit = 1
                 members = LARGE_JOB
@@ -72,6 +75,7 @@
 [[LARGE_JOB]]
 [[MEDIUM_JOB]]
 [[SMALL_JOB]]
+[[RCLONE]]
 [[create_e3d_par<event>]]
     platform = localhost
     script = apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
@@ -135,6 +139,8 @@
     [[[directives]]]
          -l select=1:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=03:00:00
+         --mail-type=BEGIN,END,FAIL
+         --mail-user=jake.faulkner@canterbury.ac.nz
 
 
 [[emod3d_medium<event>]]
@@ -145,6 +151,8 @@
     [[[directives]]]
          -l select=2:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=06:00:00
+         --mail-type=BEGIN,END,FAIL
+         --mail-user=jake.faulkner@canterbury.ac.nz
 
 [[emod3d_large<event>]]
     pre-script = "spack load intel-oneapi-mpi"
@@ -153,7 +161,9 @@
 
     [[[directives]]]
          -l select=4:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=06:00:00
+         -l walltime=12:00:00
+         --mail-type=BEGIN,END,FAIL
+         --mail-user=jake.faulkner@canterbury.ac.nz
 
 
 [[lf_to_xarray<event>]]
@@ -162,41 +172,21 @@
          -l select=1:ncpus=64:mem=128gb
          -l walltime=1:00:00
 
+
 [[create_simulation_directories]]
     platform = localhost
     pre-script = ""
     script = cp -r $EVENTS_DIR/. $CYLC_WORKFLOW_SHARE_DIR
 
-[[upload_results]]
+[[upload_results<event>]]
     platform = localhost
+    inherit = RCLONE
     script = """
-    rclone copy --progress "${CYLC_WORKFLOW_SHARE_DIR}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Scale Test" --include "realisation.*" --include intensity_measures.h5 --include velocity_model.h5
-    """
-
-[[notify<event>]]
-    platform = localhost
-    script = """
-    curl -d "LF Simulation Completed for ${EVENT}" ntfy.sh/emod3d_simulation_database
+    curl -d "Beginning result upload for ${EVENT}" ntfy.sh/emod3d_simulation_database
+    rclone copy --progress "${EVENT_SHARE}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Scale Test/${EVENT}" --include "realisation.*" --include intensity_measures.h5 --include velocity_model.h5
+    curl -d "Result upload for ${EVENT} complete" ntfy.sh/emod3d_simulation_database
     """
 
 [[cleanup_emod3d<event>]]
     platform = localhost
     script = rm -r $EVENT_SHARE/LF/Restart
-
-[[notify_fail<event>]]
-    platform = localhost
-    script = """
-    curl -d "LF Simulation Failed for ${EVENT}" ntfy.sh/emod3d_simulation_database
-    """
-
-[[notify_start<event>]]
-    platform = localhost
-    script = """
-    curl -d "LF Simulation Started for ${EVENT}" ntfy.sh/emod3d_simulation_database
-    """
-
-[[notify_complete<event>]]
-    platform = localhost
-    script = """
-    curl -d "Simulation completed for ${EVENT}" ntfy.sh/emod3d_simulation_database
-    """

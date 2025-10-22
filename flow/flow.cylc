@@ -38,7 +38,7 @@
         estimate<event>:large? => emod3d_large<event>
         emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => cleanup_emod3d<event>
         lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results<event>
-        upload_events<event> => cleanup_event<event>
+        upload_results<event> => cleanup_event<event>
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>

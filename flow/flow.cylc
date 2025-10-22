@@ -43,6 +43,16 @@
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
         realisation_to_srf<event> => create_e3d_par<event>
         """
+    [[queues]]
+        [[[large_job]]]
+                limit = 1
+                members = LARGE_JOB
+        [[[medium_job]]]
+                limit = 2
+                members = MEDIUM_JOB
+        [[[small_job]]]
+                limit = 4
+                members = SMALL_JOB
 [runtime]
 [[root]]
 
@@ -59,7 +69,9 @@
         CONTAINER = $CYLC_WORKFLOW_RUN_DIR/runner.sif
         EMOD3D = /uoc/project/uoc40001/EMOD3D/tools/emod3d-mpi_v3.0.13
         DEFAULTS = 24.2.2.1
-
+[[LARGE_JOB]]
+[[MEDIUM_JOB]]
+[[SMALL_JOB]]
 [[create_e3d_par<event>]]
     platform = localhost
     script = apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
@@ -118,6 +130,7 @@
 [[emod3d_small<event>]]
     pre-script = "spack load intel-oneapi-mpi"
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
+    inherit = SMALL_JOB
 
     [[[directives]]]
          -l select=1:ncpus=384:mpiprocs=384:mem=384gb
@@ -127,6 +140,7 @@
 [[emod3d_medium<event>]]
     pre-script = "spack load intel-oneapi-mpi"
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
+    inherit = MEDIUM_JOB
 
     [[[directives]]]
          -l select=2:ncpus=384:mpiprocs=384:mem=384gb
@@ -135,6 +149,7 @@
 [[emod3d_large<event>]]
     pre-script = "spack load intel-oneapi-mpi"
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
+    inherit = LARGE_JOB
 
     [[[directives]]]
          -l select=4:ncpus=384:mpiprocs=384:mem=384gb

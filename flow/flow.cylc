@@ -163,8 +163,8 @@
     [[[directives]]]
          -l select=4:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=12:00:00
-         -m abe
-         -M jake.faulkner@canterbury.ac.nz
+         -m=abe
+         -M=jake.faulkner@canterbury.ac.nz
 
 
 [[lf_to_xarray<event>]]

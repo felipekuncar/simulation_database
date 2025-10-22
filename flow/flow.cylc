@@ -118,6 +118,7 @@
 
 [[generate_station_coordinates<event>]]
     platform = localhost
+    inherit = SMALL_JOB
     script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /stations/stations_input.ll /event/stations/
 
 [[estimate<event>]]
@@ -139,8 +140,8 @@
     [[[directives]]]
          -l select=1:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=03:00:00
-         --mail-type=BEGIN,END,FAIL
-         --mail-user=jake.faulkner@canterbury.ac.nz
+         -m abe
+         -M jake.faulkner@canterbury.ac.nz
 
 
 [[emod3d_medium<event>]]
@@ -151,8 +152,8 @@
     [[[directives]]]
          -l select=2:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=06:00:00
-         --mail-type=BEGIN,END,FAIL
-         --mail-user=jake.faulkner@canterbury.ac.nz
+         -m abe
+         -M jake.faulkner@canterbury.ac.nz
 
 [[emod3d_large<event>]]
     pre-script = "spack load intel-oneapi-mpi"
@@ -162,8 +163,8 @@
     [[[directives]]]
          -l select=4:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=12:00:00
-         --mail-type=BEGIN,END,FAIL
-         --mail-user=jake.faulkner@canterbury.ac.nz
+         -m abe
+         -M jake.faulkner@canterbury.ac.nz
 
 
 [[lf_to_xarray<event>]]

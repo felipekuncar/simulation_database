@@ -38,7 +38,6 @@
         estimate<event>:large? => emod3d_large<event>
         emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => cleanup_emod3d<event>
         lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results<event>
-        upload_results<event> => cleanup_event<event>
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
@@ -196,46 +195,3 @@
 [[cleanup_emod3d<event>]]
     platform = localhost
     script = rm -r $EVENT_SHARE/LF/Restart $EVENT_SHARE/Velocity_Model
-
-[[cleanup_event<event>]]
-    pre-script = "spack load zstd"
-    inherit = TAR
-    script = """
-       ARCHIVE="${EVENT}.tar.zst"
-       META="${EVENT}_ARCHIVE-MANIFEST.txt"
-
-       rm -rf "${EVENT_SHARE}/LF/SeismoBin" "${EVENT_SHARE}/LF/SlipOut*" || echo "Skipping rm -- missing files"
-
-
-       tar --sort=name --numeric-owner --owner=0 --group=0 \
-           --mtime='UTC 1970-01-01' \
-           --use-compress-program="zstd -T0 -22 --ultra --long=27" \
-           -cf "${ARCHIVE}" -C "${EVENT_SHARE}" .
-
-       {
-           echo "Archive: ${ARCHIVE}"
-           echo "Source directory: ${EVENT_SHARE}"
-           echo "Created: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-           echo "Host: $(hostname)"
-           echo "Zstd version: $(zstd --version)"
-           echo "Tar version: $(tar --version | head -n1)"
-           echo "CPU cores: $(nproc)"
-           echo "Compression command: zstd -T0 -22 --ultra --long=27"
-           echo
-           echo "Contents:"
-           tar --sort=name -tf "${ARCHIVE}" 2>/dev/null || echo "(listing failed)"
-       } > "${META}"
-
-
-       sha256sum "${ARCHIVE}" > "${ARCHIVE}.sha256"
-       stat -c "Size: %s bytes" "${ARCHIVE}" >> "${META}"
-       cat "${ARCHIVE}.sha256" >> "${META}"
-
-       rm -rf "${EVENT_SHARE}"
-       mv "${ARCHIVE}" "${CYLC_WORKFLOW_SHARE_DIR}"
-       mv "${ARCHIVE}.sha256" "${CYLC_WORKFLOW_SHARE_DIR}"
-       mv "${META}" "${CYLC_WORKFLOW_SHARE_DIR}"
-    """
-    [[[directives]]]
-        -l select=1:ncpus=16:mem=16gb
-        -l walltime=6:00:00

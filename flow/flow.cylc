@@ -47,9 +47,6 @@
         [[[rclone]]]
                 limit = 1
                 members = RCLONE
-        [[[tar]]]
-                limit = 4
-                members = TAR
         [[[large_job]]]
                 limit = 1
                 members = LARGE_JOB
@@ -79,7 +76,6 @@
 [[MEDIUM_JOB]]
 [[SMALL_JOB]]
 [[RCLONE]]
-[[TAR]]
 [[create_e3d_par<event>]]
     platform = localhost
     script = apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF

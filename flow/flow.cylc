@@ -190,4 +190,4 @@
 
 [[cleanup_emod3d<event>]]
     platform = localhost
-    script = rm -r $EVENT_SHARE/LF/Restart
+    script = rm -r $EVENT_SHARE/LF/Restart $EVENT_SHARE/Velocity_Model

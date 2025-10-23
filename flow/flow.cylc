@@ -58,8 +58,15 @@
                 limit = 4
                 members = SMALL_JOB
         [[[throttle]]]
-                limit = 10
+                limit = 5
                 members = OTHER
+        [[[hf]]]
+                limit = 5
+                members = HF
+        [[[vm]]]
+                limit = 5
+                members = VM
+
 [runtime]
 [[root]]
 
@@ -81,6 +88,8 @@
 [[SMALL_JOB]]
 [[RCLONE]]
 [[OTHER]]
+[[VM]]
+[[HF]]
 [[create_e3d_par<event>]]
     platform = localhost
     script = apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
@@ -97,14 +106,14 @@
 
 [[generate_velocity_model<event>]]
     script = apptainer exec --env "NZCVM_DATA_ROOT=/nzcvm" -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm --num-threads 64
-    inherit = OTHER
+    inherit = VM
     [[[directives]]]
          -l select=1:ncpus=64:mem=128gb
          -l walltime=06:00:00
 
 [[hf_sim<event>]]
     script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
-    inherit = OTHER
+    inherit = HF
     [[[directives]]]
          -l select=1:ncpus=32:mem=64gb
          -l walltime=06:00:00
@@ -123,7 +132,7 @@
 
 [[generate_stoch<event>]]
     script = apptainer exec -c "$CONTAINER" generate-stoch /event/realisation.json /event/realisation.srf /event/realisation.stoch
-    inherit = OTHER
+    inherit = HF
 
 [[generate_station_coordinates<event>]]
     platform = localhost

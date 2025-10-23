@@ -177,7 +177,7 @@
 [[create_simulation_directories]]
     platform = localhost
     pre-script = ""
-    script = cp -r $EVENTS_DIR/. $CYLC_WORKFLOW_SHARE_DIR
+    script = tar xf $EVENTS_DIR/realisations.tar.gz -C $CYLC_WORKFLOW_SHARE_DIR
 
 [[upload_results<event>]]
     platform = localhost

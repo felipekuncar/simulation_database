@@ -36,7 +36,8 @@
         estimate<event>:small? => emod3d_small<event>
         estimate<event>:medium? => emod3d_medium<event>
         estimate<event>:large? => emod3d_large<event>
-        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> => lf_to_xarray<event> => cleanup_emod3d<event>
+        estimate<event>:x_large? => emod3d_x_large<event>
+        emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> | emod3d_x_large<event> => lf_to_xarray<event> => cleanup_emod3d<event>
         lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results<event>
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
@@ -56,6 +57,9 @@
         [[[small_job]]]
                 limit = 4
                 members = SMALL_JOB
+        [[[throttle]]]
+                limit = 10
+                members = OTHER
 [runtime]
 [[root]]
 
@@ -76,28 +80,31 @@
 [[MEDIUM_JOB]]
 [[SMALL_JOB]]
 [[RCLONE]]
+[[OTHER]]
 [[create_e3d_par<event>]]
     platform = localhost
     script = apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
+    inherit = OTHER
     [[[environment]]]
          APPTAINER_BINDPATH = $EVENT_SHARE
 
 [[bb_sim<event>]]
     script = apptainer exec -c "$CONTAINER" bb-sim /event/realisation.json /stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
+    inherit = OTHER
     [[[directives]]]
          -l select=1:ncpus=64:mem=128gb
          -l walltime=01:00:00
 
 [[generate_velocity_model<event>]]
     script = apptainer exec --env "NZCVM_DATA_ROOT=/nzcvm" -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm --num-threads 64
-
+    inherit = OTHER
     [[[directives]]]
          -l select=1:ncpus=64:mem=128gb
          -l walltime=06:00:00
 
 [[hf_sim<event>]]
     script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
-
+    inherit = OTHER
     [[[directives]]]
          -l select=1:ncpus=32:mem=64gb
          -l walltime=06:00:00
@@ -105,31 +112,35 @@
 
 [[im_calc<event>]]
     script = apptainer exec -c "$CONTAINER" im-calc /event/realisation.json /event/realisation.bb /event/intensity_measures.h5 --psa-rotd-maximum-memory-allocation 40 --ko-directory /ko_matrices
-
+    inherit = OTHER
     [[[directives]]]
          -l select=1:ncpus=64:mem=100gb
          -l walltime=01:00:00
 
 [[realisation_to_srf<event>]]
     script = apptainer exec -c "$CONTAINER" realisation-to-srf /event/realisation.json /event/realisation.srf --genslip-path /EMOD3D/tools/genslip_v5.6.2
+    inherit = OTHER
 
 [[generate_stoch<event>]]
     script = apptainer exec -c "$CONTAINER" generate-stoch /event/realisation.json /event/realisation.srf /event/realisation.stoch
+    inherit = OTHER
 
 [[generate_station_coordinates<event>]]
     platform = localhost
-    inherit = SMALL_JOB
+    inherit = OTHER
     script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /stations/stations_input.ll /event/stations/
 
 [[estimate<event>]]
     platform = localhost
     script = "estimate_job_size $EVENT_SHARE/LF/e3d.par"
-    completion = succeeded and (small or medium or large)
+    completion = succeeded and (small or medium or large or x_large)
+    inherit = OTHER
 
     [[[outputs]]]
         small = 'small'
         medium = 'medium'
         large = 'large'
+        x_large = 'x_large'
 
 
 [[emod3d_small<event>]]
@@ -166,9 +177,21 @@
          -m=abe
          -M=jake.faulkner@canterbury.ac.nz
 
+[[emod3d_x_large<event>]]
+    pre-script = "spack load intel-oneapi-mpi"
+    script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
+    inherit = LARGE_JOB
+
+    [[[directives]]]
+         -l select=6:ncpus=384:mpiprocs=384:mem=384gb
+         -l walltime=12:00:00
+         -m=abe
+         -M=jake.faulkner@canterbury.ac.nz
+
 
 [[lf_to_xarray<event>]]
     script = apptainer exec -c "$CONTAINER" lf-to-xarray /event/LF/OutBin /event/realisation.lf
+    inherit = OTHER
     [[[directives]]]
          -l select=1:ncpus=64:mem=128gb
          -l walltime=1:00:00
@@ -190,4 +213,5 @@
 
 [[cleanup_emod3d<event>]]
     platform = localhost
+    inherit = OTHER
     script = rm -r $EVENT_SHARE/LF/Restart $EVENT_SHARE/Velocity_Model

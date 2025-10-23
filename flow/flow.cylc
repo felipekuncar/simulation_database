@@ -115,7 +115,7 @@
     script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
     inherit = HF
     [[[directives]]]
-         -l select=1:ncpus=32:mem=64gb
+         -l select=1:ncpus=64:mem=128gb
          -l walltime=06:00:00
 
 

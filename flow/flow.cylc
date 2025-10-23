@@ -124,7 +124,7 @@
     inherit = OTHER
     [[[directives]]]
          -l select=1:ncpus=64:mem=100gb
-         -l walltime=01:00:00
+         -l walltime=02:00:00
 
 [[realisation_to_srf<event>]]
     script = apptainer exec -c "$CONTAINER" realisation-to-srf /event/realisation.json /event/realisation.srf --genslip-path /EMOD3D/tools/genslip_v5.6.2

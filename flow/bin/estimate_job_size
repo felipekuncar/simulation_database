@@ -22,7 +22,9 @@ BEGIN {
         nmax = nyz;
 
     mem = 4 * (31 * nx * ny * nz + 56 * nmax + 6 * (nx + nz));
-    if (mem > 3.072 * 10 ^ 11)
+    if (mem > 1.00 * 10 ^ 12)
+        print "x_large";
+    else if (mem > 3.072 * 10 ^ 11)
         printf "large";
     else if (mem > 7.68 * 10 ^ 10)
         printf "medium";

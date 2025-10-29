@@ -48,10 +48,10 @@
                 limit = 1
                 members = RCLONE
         [[[large_job]]]
-                limit = 1
+                limit = 2
                 members = LARGE_JOB
         [[[medium_job]]]
-                limit = 2
+                limit = 4
                 members = MEDIUM_JOB
         [[[small_job]]]
                 limit = 4

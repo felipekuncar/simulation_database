@@ -1,6 +1,6 @@
 # Writen by Felipe Kuncar
 # felipe.kuncar@canterbury.ac.nz
-# Last modified on 31-10-2025
+# Last modified on 03-11-2025
 
 #======================================================================================================================
 # IMPORT
@@ -16,8 +16,8 @@ import numpy as np
 # SELECT COMPUTER
 #======================================================================================================================
 
-#computer = 'local'
-computer = 'RCH'
+computer = 'local'
+#computer = 'RCH'
 
 #======================================================================================================================
 # SELECT OPTION
@@ -36,12 +36,14 @@ if computer == 'local':
 
     nzgmdb_rotd50_path = Path(__file__).parents[6] / '21_NZGMDB' / 'NZGMDB_v4p3' / 'NZGMDB-Quality-Flatfiles' / 'Intensity-Measure Ground-Motion Flat-Files' / 'ground_motion_im_table_rotd50_flat.csv'
     nzgmdb_geom_path = Path(__file__).parents[6] / '21_NZGMDB' / 'NZGMDB_v4p3' / 'NZGMDB-Quality-Flatfiles' / 'Intensity-Measure Ground-Motion Flat-Files' / 'ground_motion_im_table_geom_flat.csv'
+    nzgmdb_eas_path = Path(__file__).parents[6] / '21_NZGMDB' / 'NZGMDB_v4p3' / 'NZGMDB-Quality-Flatfiles' / 'Intensity-Measure Ground-Motion Flat-Files' / 'ground_motion_im_table_eas_flat.csv'
     sim_path = Path(__file__).parents[1] / 'results'
 
 elif computer == 'RCH':
 
     nzgmdb_rotd50_path = Path(__file__).parents[1] / 'NZGMDB' / 'NZGMDB_v4p3' / 'NZGMDB-Quality-Flatfiles' / 'Intensity-Measure Ground-Motion Flat-Files' / 'ground_motion_im_table_rotd50_flat.csv'
     nzgmdb_geom_path = Path(__file__).parents[1] / 'NZGMDB' / 'NZGMDB_v4p3' / 'NZGMDB-Quality-Flatfiles' / 'Intensity-Measure Ground-Motion Flat-Files' / 'ground_motion_im_table_geom_flat.csv'
+    nzgmdb_eas_path = Path(__file__).parents[1] / 'NZGMDB' / 'NZGMDB_v4p3' / 'NZGMDB-Quality-Flatfiles' / 'Intensity-Measure Ground-Motion Flat-Files' / 'ground_motion_eas_table_geom_flat.csv'
     sim_path = Path('/scratch/projects/rch-quakecore/Felipe_Validation')
 
 #======================================================================================================================
@@ -50,6 +52,7 @@ elif computer == 'RCH':
 
 nzgmdb_rotd50_df = pd.read_csv(nzgmdb_rotd50_path, dtype={'evid': str, 'sta': str})
 nzgmdb_geom_df = pd.read_csv(nzgmdb_geom_path, dtype={'evid': str, 'sta': str})
+nzgmdb_eas_df = pd.read_csv(nzgmdb_eas_path, dtype={'evid': str, 'sta': str})
 
 #======================================================================================================================
 # SELECT EVENTS
@@ -185,6 +188,21 @@ T_array_obs = np.array([float(col.split('_')[1]) for col in pSA_cols])
 T_array = T_array_sim
 
 #======================================================================================================================
+# EXTRACT FREQUENCIES FOR WHICH FAS IS AVAILABLE
+#======================================================================================================================
+
+# Read one simulated event and extract the vibration periods
+first_evid = sim_data_df.iloc[0]['evid']
+f_array_sim = sim_ims.frequency.values
+
+# Extract vibration periods in observational database
+f_cols = [col for col in nzgmdb_eas_df.columns if col.startswith('FAS')]
+f_array_obs = np.array([float(col.split('_')[1]) for col in f_cols])
+
+# Use the vibration periods from simulations
+f_array = f_array_sim
+
+#======================================================================================================================
 # CREATE CSV FILES FOR RESIDUAL ANALYSIS AND WRITE HEADERS
 #======================================================================================================================
 
@@ -211,6 +229,8 @@ writer_events.writerow(['event_id', 'event_name'])
 im_header = ['gm_id', 'event_id', 'stat_id', 'PGA', 'PGV', 'CAV', 'AI', 'Ds575', 'Ds595']
 for T in T_array:
     im_header.append('pSA_%.12f' % T)
+for f in f_array:
+    im_header.append('EAS_%.12f' % f)
 # Create CSV file and write the header
 f_im_sim = open(Path(residual_input_path / 'im_sim.csv'), 'w', newline="")
 writer_im_sim = csv.writer(f_im_sim)
@@ -276,8 +296,11 @@ for idx, row in sim_data_df.iterrows():
     Ds575 = sim_ims.Ds575.sel(station=stat_name, component='geom').values
     Ds595 = sim_ims.Ds595.sel(station=stat_name, component='geom').values
     SA_array = sim_ims.pSA.sel(station=stat_name, component='rotd50', period=T_array).to_dataframe()['pSA'].values
+    FAS_000_array = sim_ims.FAS.sel(station=stat_name, component='000', frequency=f_array).to_dataframe()['FAS'].values
+    FAS_090_array = sim_ims.FAS.sel(station=stat_name, component='090', frequency=f_array).to_dataframe()['FAS'].values
+    EAS_array = np.sqrt(0.5 * (FAS_000_array ** 2 + FAS_090_array ** 2))
     # Save values
-    im_sim_values = [gm_id, current_event_id, current_stat_id, PGA, PGV, CAV, AI, Ds575, Ds595] + SA_array.tolist()
+    im_sim_values = [gm_id, current_event_id, current_stat_id, PGA, PGV, CAV, AI, Ds575, Ds595] + SA_array.tolist() + EAS_array.tolist()
 
     if model_option == 'ff_ps':
         ### Fill point-source simulated IMs file
@@ -296,13 +319,17 @@ for idx, row in sim_data_df.iterrows():
         Ds575 = sim_ims_p.Ds575.sel(station=stat_name, component='geom').values
         Ds595 = sim_ims_p.Ds595.sel(station=stat_name, component='geom').values
         SA_array = sim_ims_p.pSA.sel(station=stat_name, component='rotd50', period=T_array).to_dataframe()['pSA'].values
+        FAS_000_array = sim_ims_p.FAS.sel(station=stat_name, component='000', frequency=f_array).to_dataframe()['FAS'].values
+        FAS_090_array = sim_ims_p.FAS.sel(station=stat_name, component='090', frequency=f_array).to_dataframe()['FAS'].values
+        EAS_array = np.sqrt(0.5 * (FAS_000_array ** 2 + FAS_090_array ** 2))
         # Save values
-        im_sim_p_values = [gm_id, current_event_id, current_stat_id, PGA, PGV, CAV, AI, Ds575, Ds595] + SA_array.tolist()
+        im_sim_p_values = [gm_id, current_event_id, current_stat_id, PGA, PGV, CAV, AI, Ds575, Ds595] + SA_array.tolist() + EAS_array.tolist()
 
     ### Fill observed IMs file
     # Read observational datasets
     nzgmdb_rotd50_event_station_df = nzgmdb_rotd50_df[(nzgmdb_rotd50_df['evid'] == event_name) & (nzgmdb_rotd50_df['sta'] == stat_name)]
     nzgmdb_geom_event_station_df = nzgmdb_geom_df[(nzgmdb_geom_df['evid'] == event_name) & (nzgmdb_geom_df['sta'] == stat_name)]
+    nzgmdb_eas_event_station_df = nzgmdb_eas_df[(nzgmdb_eas_df['evid'] == event_name) & (nzgmdb_eas_df['sta'] == stat_name)]
     # Extract values
     PGA = nzgmdb_rotd50_event_station_df['PGA'].values[0]
     PGV = nzgmdb_rotd50_event_station_df['PGV'].values[0]
@@ -312,10 +339,13 @@ for idx, row in sim_data_df.iterrows():
     Ds595 = nzgmdb_geom_event_station_df['Ds595'].values[0]
     pSA_cols = [col for col in nzgmdb_rotd50_event_station_df.columns if col.startswith('pSA')]
     SA_array  = nzgmdb_rotd50_event_station_df[pSA_cols].iloc[0].values
-    # Interpolate SA values to be consistent with simulation array
+    EAS_cols = [col for col in nzgmdb_eas_event_station_df.columns if col.startswith('FAS')]
+    EAS_array  = nzgmdb_eas_event_station_df[EAS_cols].iloc[0].values
+    # Interpolate SA and EAS values to be consistent with simulation array
     SA_array = np.interp(T_array, T_array_obs, SA_array)
+    EAS_array = np.interp(f_array, f_array_obs, EAS_array)
     # Save values
-    im_obs_values = [gm_id, current_event_id, current_stat_id, PGA, PGV, CAV, AI, Ds575, Ds595] + SA_array.tolist()
+    im_obs_values = [gm_id, current_event_id, current_stat_id, PGA, PGV, CAV, AI, Ds575, Ds595] + SA_array.tolist() + EAS_array.tolist()
 
     # Write to sim and obs CSVs
     writer_im_sim.writerow(im_sim_values)

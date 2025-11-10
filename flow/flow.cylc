@@ -30,8 +30,10 @@
 [scheduling]
     [[graph]]
     # NOTE: suceeded and fail for emod3d must both be optional if both execution paths are used
+    # The idea of the cleanup_emod3d job is to limit the number of generated VMs to at most 10 at a time to limit disk usage
         R1 = """
         create_simulation_directories => generate_velocity_model<event> & generate_station_coordinates<event> & realisation_to_srf<event>
+	cleanup_emod3d<event-10> => generate_velocity_model<event>
         generate_velocity_model<event> => create_e3d_par<event> => estimate<event>
         estimate<event>:small? => emod3d_small<event>
         estimate<event>:medium? => emod3d_medium<event>
@@ -49,7 +51,7 @@
                 limit = 1
                 members = RCLONE
         [[[large_job]]]
-                limit = 2
+                limit = 4
                 members = LARGE_JOB
         [[[medium_job]]]
                 limit = 4
@@ -58,7 +60,7 @@
                 limit = 4
                 members = SMALL_JOB
         [[[throttle]]]
-                limit = 5
+                limit = 3
                 members = OTHER
         [[[hf]]]
                 limit = 5
@@ -92,7 +94,10 @@
 [[HF]]
 [[create_e3d_par<event>]]
     platform = localhost
-    script = apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
+    script = """
+        apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
+        sed -i 's/enable_restart=1/enable_restart=0/g' $EVENT_SHARE/LF/e3d.par
+    """
     inherit = OTHER
     [[[environment]]]
          APPTAINER_BINDPATH = $EVENT_SHARE
@@ -101,7 +106,7 @@
     script = apptainer exec -c "$CONTAINER" bb-sim /event/realisation.json /stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
     inherit = OTHER
     [[[directives]]]
-         -l select=1:ncpus=64:mem=128gb
+         -l select=1:ncpus=64:mem=256gb
          -l walltime=01:00:00
 
 [[generate_velocity_model<event>]]
@@ -123,7 +128,7 @@
     script = apptainer exec -c "$CONTAINER" im-calc /event/realisation.json /event/realisation.bb /event/intensity_measures.h5 --psa-rotd-maximum-memory-allocation 40 --ko-directory /ko_matrices
     inherit = OTHER
     [[[directives]]]
-         -l select=1:ncpus=64:mem=100gb
+         -l select=1:ncpus=64:mem=256gb
          -l walltime=02:00:00
 
 [[realisation_to_srf<event>]]
@@ -160,8 +165,6 @@
     [[[directives]]]
          -l select=1:ncpus=384:mpiprocs=384:mem=384gb
          -l walltime=03:00:00
-         -m=abe
-         -M=jake.faulkner@canterbury.ac.nz
 
 
 [[emod3d_medium<event>]]
@@ -170,10 +173,8 @@
     inherit = MEDIUM_JOB
 
     [[[directives]]]
-         -l select=2:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=06:00:00
-         -m=abe
-         -M=jake.faulkner@canterbury.ac.nz
+         -l select=3:ncpus=384:mpiprocs=384:mem=384gb
+         -l walltime=12:00:00
 
 [[emod3d_large<event>]]
     pre-script = "spack load intel-oneapi-mpi"
@@ -182,9 +183,7 @@
 
     [[[directives]]]
          -l select=4:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=12:00:00
-         -m=abe
-         -M=jake.faulkner@canterbury.ac.nz
+         -l walltime=36:00:00
 
 [[emod3d_x_large<event>]]
     pre-script = "spack load intel-oneapi-mpi"
@@ -193,9 +192,7 @@
 
     [[[directives]]]
          -l select=6:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=12:00:00
-         -m=abe
-         -M=jake.faulkner@canterbury.ac.nz
+         -l walltime=36:00:00
 
 
 [[lf_to_xarray<event>]]
@@ -215,12 +212,11 @@
     platform = localhost
     inherit = RCLONE
     script = """
-    curl -d "Beginning result upload for ${EVENT}" ntfy.sh/emod3d_simulation_database
-    rclone copy --progress "${EVENT_SHARE}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Scale Test/${EVENT}" --include "realisation.*" --include intensity_measures.h5 --include velocity_model.h5
-    curl -d "Result upload for ${EVENT} complete" ntfy.sh/emod3d_simulation_database
+    rclone copy --progress "${EVENT_SHARE}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Ayushi Models" --include "realisation.*" --include intensity_measures.h5 
+    curl -d "Result upload for ${EVENT} complete" ntfy.sh/ayushi_validation_db
     """
 
 [[cleanup_emod3d<event>]]
     platform = localhost
     inherit = OTHER
-    script = rm -r $EVENT_SHARE/LF/Restart $EVENT_SHARE/Velocity_Model
+    script = rm -r $EVENT_SHARE/LF/Restart $EVENT_SHARE/LF/SeismoBin $EVENT_SHARE/Velocity_Model

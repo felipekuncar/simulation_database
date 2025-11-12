@@ -214,7 +214,7 @@
     platform = localhost
     inherit = RCLONE
     script = """
-    rclone copy --progress "${EVENT_SHARE}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Ayushi Models" --include "realisation.*" --include intensity_measures.h5 
+    rclone copy --progress "${EVENT_SHARE}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Ayushi Models/${EVENT}" --include "realisation.*" --include intensity_measures.h5 
     curl -d "Result upload for ${EVENT} complete" ntfy.sh/ayushi_validation_db
     """
 

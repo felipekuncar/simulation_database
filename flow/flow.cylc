@@ -33,14 +33,13 @@
     # The idea of the cleanup_emod3d job is to limit the number of generated VMs to at most 10 at a time to limit disk usage
         R1 = """
         create_simulation_directories => generate_velocity_model<event> & generate_station_coordinates<event> & realisation_to_srf<event>
-    	cleanup_emod3d<event-10> => generate_velocity_model<event>
         generate_velocity_model<event> => create_e3d_par<event> => estimate<event>
         estimate<event>:small? => emod3d_small<event>
         estimate<event>:medium? => emod3d_medium<event>
         estimate<event>:large? => emod3d_large<event>
         estimate<event>:x_large? => emod3d_x_large<event>
         emod3d_small<event> | emod3d_medium<event> | emod3d_large<event> | emod3d_x_large<event> => lf_to_xarray<event> => cleanup_emod3d<event>
-        lf_to_xarray<event> => bb_sim<event> => im_calc<event> => upload_results<event>
+        lf_to_xarray<event> => bb_sim<event> => im_calc<event>
         generate_station_coordinates<event> => create_e3d_par<event>
         generate_station_coordinates<event> => hf_sim<event> => bb_sim<event>
         realisation_to_srf<event> => generate_stoch<event> => hf_sim<event>
@@ -71,20 +70,65 @@
 
 [runtime]
 [[root]]
-
-    platform = cascade
-    pre-script = "spack load apptainer"
+    platform = barcelona
+    pre-script = """
+            export SLURM_CPU_BIND=none
+            module load singularity/3.11.5
+    """
+    [[[directives]]]
+            --account = cant1
+            --qos = gp_resa
+    
     [[[environment]]]
         EVENT = %(event)s
-        NZCVM_PATH = "/uoc/project/uoc40001/nzcvm_data"
+        PROJECT_ROOT = "/gpfs/projects/cant1"
+        NZCVM_PATH = "${PROJECT_ROOT}/nzcvm_data"
         EVENTS_DIR = "$CYLC_WORKFLOW_RUN_DIR/events"
         EVENT_SHARE = $CYLC_WORKFLOW_SHARE_DIR/%(event)s
-        KO_MATRIX_PATH = /uoc/project/uoc40001/ko_matrices
+        KO_MATRIX_PATH = "${PROJECT_ROOT}/ko_matrices"
         STATIONS_PATH = "$CYLC_WORKFLOW_RUN_DIR/stations"
-        APPTAINER_BINDPATH = "$PWD:/out,${EVENT_SHARE}:/event,${KO_MATRIX_PATH}:/ko_matrices,${STATIONS_PATH}:/stations,${NZCVM_PATH}:/nzcvm"
+        # Note: Changed SINGULARITY_BIND to SINGULARITY_BIND to natively support the Source 2 script executions
+        SINGULARITY_BIND = "$PWD:/out,${EVENT_SHARE}:/event,${KO_MATRIX_PATH}:/ko_matrices,${STATIONS_PATH}:/stations,${NZCVM_PATH}:/nzcvm"
         CONTAINER = $CYLC_WORKFLOW_RUN_DIR/runner.sif
-        EMOD3D = /uoc/project/uoc40001/EMOD3D/tools/emod3d-mpi_v3.0.13
+        EMOD3D = "${PROJECT_ROOT}/EMOD3D/tools/emod3d-mpi_v3.0.13"
         DEFAULTS = 24.2.2.1
+
+[[EMOD3D_BASE]]
+    pre-script = """
+        # MN5 GPP nodes have 256GB total
+        TOTAL_MEM_MB=256000 
+        SAFETY=0.85
+        
+        # SLURM_NTASKS_PER_NODE is provided by Slurm at runtime
+        MAXMEM=$(python3 -c "print(int(($TOTAL_MEM_MB / $SLURM_NTASKS_PER_NODE) * $SAFETY))")
+        
+        echo "Updating e3d.par with MAXMEM: $MAXMEM MB per core"
+        sed -i "s/^maxmem=.*/maxmem=$MAXMEM/" $EVENT_SHARE/LF/e3d.par
+
+        echo "Cleaning stale LF output files in $EVENT_SHARE/LF/ ..."
+        for dir in Log OutBin Restart SeismoBin SlipOut TSFiles; do
+            target="$EVENT_SHARE/LF/$dir"
+            if [ -d "$target" ]; then
+                find "$target" -mindepth 1 -delete
+                echo "  Cleared: $target"
+            fi
+        done
+        echo "LF directories cleaned."
+
+        module purge
+        module load bsc/1.0 
+        module load gcc/12.3.0 
+        module load ucx/1.16.0-gcc 
+        module load openmpi/4.1.5-gcc
+
+        export SLURM_CPU_BIND=none
+        export N_PROC=$SLURM_NTASKS
+        ulimit -s unlimited
+    """
+    [[[directives]]]
+        --exclusive = 
+        --ntasks-per-node = 112
+
 [[LARGE_JOB]]
 [[MEDIUM_JOB]]
 [[SMALL_JOB]]
@@ -92,131 +136,113 @@
 [[OTHER]]
 [[VM]]
 [[HF]]
+
 [[create_e3d_par<event>]]
     platform = localhost
     script = """
-        apptainer exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
+        singularity exec -c $CONTAINER create-e3d-par $EVENT_SHARE/realisation.json $EVENT_SHARE/realisation.srf $EVENT_SHARE/Velocity_Model $EVENT_SHARE/stations $EVENT_SHARE/LF
         sed -i 's/enable_restart=1/enable_restart=0/g' $EVENT_SHARE/LF/e3d.par
     """
     inherit = OTHER
     [[[environment]]]
-         APPTAINER_BINDPATH = $EVENT_SHARE
+         SINGULARITY_BIND = $EVENT_SHARE
 
 [[bb_sim<event>]]
-    script = apptainer exec -c "$CONTAINER" bb-sim /event/realisation.json /stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
+    script = singularity exec -c "$CONTAINER" bb-sim /event/realisation.json /stations/stations.vs30 /event/realisation.lf /event/realisation.hf /event/realisation.bb
     inherit = OTHER
     [[[directives]]]
-         -l select=1:ncpus=64:mem=256gb
-         -l walltime=01:00:00
+         --time=01:00:00
+         --cpus-per-task=112
 
 [[generate_velocity_model<event>]]
-    script = apptainer exec --env "NZCVM_DATA_ROOT=/nzcvm" -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm --num-threads 64
+    script = singularity exec --env "NZCVM_DATA_ROOT=/nzcvm" -c "$CONTAINER" generate-velocity-model /event/realisation.json /event/Velocity_Model --use-nzcvm --num-threads 64
     inherit = VM
     [[[directives]]]
-         -l select=1:ncpus=64:mem=128gb
-         -l walltime=06:00:00
+         --cpus-per-task=112
+         --time=06:00:00
 
 [[hf_sim<event>]]
-    script = apptainer exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
+    script = singularity exec -c "$CONTAINER" hf-sim /event/realisation.json /event/realisation.stoch /event/stations/stations.ll /event/realisation.hf
     inherit = HF
     [[[directives]]]
-         -l select=1:ncpus=64:mem=128gb
-         -l walltime=12:00:00
-
+         --cpus-per-task=112
+         --time=12:00:00
 
 [[im_calc<event>]]
-    script = apptainer exec -c "$CONTAINER" im-calc /event/realisation.json /event/realisation.bb /event/intensity_measures.h5 --psa-rotd-maximum-memory-allocation 40 --ko-directory /ko_matrices
+    script = singularity exec -c "$CONTAINER" im-calc /event/realisation.json /event/realisation.bb /event/intensity_measures.h5 --psa-rotd-maximum-memory-allocation 40 --ko-directory /ko_matrices
     inherit = OTHER
     [[[directives]]]
-         -l select=1:ncpus=64:mem=256gb
-         -l walltime=04:00:00
+         --cpus-per-task=112
+         --time=04:00:00
 
 [[realisation_to_srf<event>]]
-    script = apptainer exec -c "$CONTAINER" realisation-to-srf /event/realisation.json /event/realisation.srf --genslip-path /EMOD3D/tools/genslip_v5.6.2
+    script = singularity exec -c "$CONTAINER" realisation-to-srf /event/realisation.json /event/realisation.srf --genslip-path /EMOD3D/tools/genslip_v5.6.2
     inherit = OTHER
 
 [[generate_stoch<event>]]
-    script = apptainer exec -c "$CONTAINER" generate-stoch /event/realisation.json /event/realisation.srf /event/realisation.stoch
+    script = singularity exec -c "$CONTAINER" generate-stoch /event/realisation.json /event/realisation.srf /event/realisation.stoch
     inherit = HF
 
 [[generate_station_coordinates<event>]]
     platform = localhost
     inherit = OTHER
-    script = apptainer exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /stations/stations_input.ll /event/stations/
+    script = singularity exec -c "$CONTAINER" generate-station-coordinates /event/realisation.json /stations/stations_input.ll /event/stations/
 
 [[estimate<event>]]
     platform = localhost
     script = "estimate_job_size $EVENT_SHARE/LF/e3d.par"
     completion = succeeded and (small or medium or large or x_large)
     inherit = OTHER
-
     [[[outputs]]]
         small = 'small'
         medium = 'medium'
         large = 'large'
         x_large = 'x_large'
 
-
 [[emod3d_small<event>]]
-    pre-script = "spack load intel-oneapi-mpi"
+    inherit = EMOD3D_BASE, SMALL_JOB
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
-    inherit = SMALL_JOB
-
     [[[directives]]]
-         -l select=1:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=03:00:00
-
+        --nodes=4
+        --time=03:00:00
 
 [[emod3d_medium<event>]]
-    pre-script = "spack load intel-oneapi-mpi"
+    inherit = EMOD3D_BASE, MEDIUM_JOB
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
-    inherit = MEDIUM_JOB
-
     [[[directives]]]
-         -l select=3:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=12:00:00
+        --nodes=16
+        --time=06:00:00
 
 [[emod3d_large<event>]]
-    pre-script = "spack load intel-oneapi-mpi"
+    inherit = EMOD3D_BASE, LARGE_JOB
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
-    inherit = LARGE_JOB
-
     [[[directives]]]
-         -l select=4:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=36:00:00
+        --nodes=32 
+        --time=12:00:00
 
 [[emod3d_x_large<event>]]
-    pre-script = "spack load intel-oneapi-mpi"
+    inherit = EMOD3D_BASE, LARGE_JOB
     script = "mpirun $EMOD3D -args par=$EVENT_SHARE/LF/e3d.par"
-    inherit = LARGE_JOB
-
     [[[directives]]]
-         -l select=6:ncpus=384:mpiprocs=384:mem=384gb
-         -l walltime=36:00:00
-
+        --nodes=90   
+        --time=24:00:00
 
 [[lf_to_xarray<event>]]
     script = """
-        apptainer exec -c "$CONTAINER" lf-to-xarray /event/LF/OutBin /event/realisation.lf
-        apptainer exec -c "$CONTAINER" merge-ts hdf5 /event/LF/OutBin /event/realisation.xyts
+        singularity exec -c "$CONTAINER" lf-to-xarray /event/LF/OutBin /event/realisation.lf
+        singularity exec -c "$CONTAINER" merge-ts /event/LF/OutBin /event/realisation.xyts
     """
     inherit = OTHER
     [[[directives]]]
-         -l select=1:ncpus=64:mem=256gb
-         -l walltime=1:00:00
+        --nodes=1
+        --ntasks=1
+        --cpus-per-task=112
+        --time=01:00:00
 
 [[create_simulation_directories]]
     platform = localhost
     pre-script = ""
     script = tar xf $EVENTS_DIR/realisations.tar.gz -C $CYLC_WORKFLOW_SHARE_DIR
-
-[[upload_results<event>]]
-    platform = localhost
-    inherit = RCLONE
-    script = """
-    rclone copy --progress "${EVENT_SHARE}" "dropbox:/QuakeCoRE/Jake/Simulation Database/Ayushi Models/${EVENT}" --include "realisation.*" --include intensity_measures.h5 
-    curl -d "Result upload for ${EVENT} complete" ntfy.sh/ayushi_validation_db
-    """
 
 [[cleanup_emod3d<event>]]
     platform = localhost
